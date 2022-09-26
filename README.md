@@ -1,0 +1,1 @@
+# test-switchbot-smart-lock
