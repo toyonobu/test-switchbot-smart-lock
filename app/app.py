@@ -5,20 +5,18 @@ import hmac
 import base64
 import uuid
 import json as j
-#
+
 import streamlit as st
 import requests
-#
-import config 
 
 
 # アクセス用のtimestamp/sign/nonceの生成
-token=config.TOKEN
+token=st.secrets["TOKEN"]
 nonce = uuid.uuid4().int
 t = int(round(time.time() * 1000))
 string_to_sign = '{}{}{}'.format(token, t, nonce)
 string_to_sign = bytes(string_to_sign, 'utf-8')
-secret = bytes(config.SECRET, 'utf-8')
+secret = bytes(st.secrets["SECRET"], 'utf-8')
 sign = base64.b64encode(hmac.new(secret, msg=string_to_sign, digestmod=hashlib.sha256).digest())
 
 # リクエストヘッダの設定
@@ -28,6 +26,9 @@ header["sign"] = sign
 header["t"] = str(t)
 header["nonce"] = str(nonce)
 
+
+API_SERVER = st.secrets["API_SERVER"]
+DEVICE_ID = st.secrets["DEVICE_ID"]
 
 params = {}
 params["commandType"] = "command"
@@ -72,7 +73,7 @@ def check_password():
 
 if check_password():
     # デバイスステータスの取得
-    response = requests.get(config.API_SERVER + "/v1.1/devices/"+ config.DEVICE_ID +"/status", headers=header)
+    response = requests.get(API_SERVER + "/v1.1/devices/"+ DEVICE_ID +"/status", headers=header)
     status = j.loads(response.text)
 
     if status["statusCode"] != 100:
@@ -85,17 +86,17 @@ if check_password():
         if st.session_state['lockState']=="locked":
           if st.button("解錠する"):
             params["command"] = "unlock"
-            requests.post(config.API_SERVER+"/v1.1/devices/"+config.DEVICE_ID+"/commands", headers=header, json=params)
+            requests.post(API_SERVER+"/v1.1/devices/"+DEVICE_ID+"/commands", headers=header, json=params)
             time.sleep(1)
-            response = requests.get(config.API_SERVER + "/v1.1/devices/"+ config.DEVICE_ID +"/status", headers=header)
+            response = requests.get(API_SERVER + "/v1.1/devices/"+ DEVICE_ID +"/status", headers=header)
             status = j.loads(response.text)
             st.session_state['lockState']="unlocked"
         else:
           if st.button("施錠する"):
             params["command"] = "lock"
-            requests.post(config.API_SERVER+"/v1.1/devices/"+config.DEVICE_ID+"/commands", headers=header, json=params)
+            requests.post(API_SERVER+"/v1.1/devices/"+DEVICE_ID+"/commands", headers=header, json=params)
             time.sleep(1)
-            response = requests.get(config.API_SERVER + "/v1.1/devices/"+ config.DEVICE_ID +"/status", headers=header)
+            response = requests.get(API_SERVER + "/v1.1/devices/"+ DEVICE_ID +"/status", headers=header)
             status = j.loads(response.text)
             st.session_state['lockState']="locked"
 
